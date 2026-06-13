@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Driver Verification | Transport-Link</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080808;
+      --bg2: #0f0f0f;
+      --bg3: #141414;
+      --card: #111111;
+      --border: #1e1e1e;
+      --accent: #00e87a;
+      --accent-dim: rgba(0,232,122,0.12);
+      --text: #e8e8e8;
+      --muted: #666;
+      --red: #ff4444;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(8,8,8,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 5%;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+
+    .nav-logo {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.18em;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .nav-logo span {
+      background: var(--accent); color: #000;
+      padding: 3px 7px; font-size: 0.65rem; letter-spacing: 0.1em;
+    }
+
+    .nav-links {
+      display: flex; align-items: center; gap: 2rem; list-style: none;
+    }
+    .nav-links a {
+      font-size: 0.78rem; letter-spacing: 0.08em; color: var(--muted);
+      transition: color 0.2s; text-transform: uppercase;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links .btn-nav {
+      background: var(--accent); color: #000;
+      padding: 7px 18px; font-weight: 700; font-size: 0.72rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+
+    .hamburger {
+      display: none; flex-direction: column; gap: 5px;
+      cursor: pointer; padding: 4px;
+    }
+    .hamburger span { width: 22px; height: 2px; background: var(--text); }
+
+    .mobile-nav {
+      display: none; position: fixed; top: 64px; left: 0; right: 0;
+      background: var(--bg2); border-bottom: 1px solid var(--border);
+      padding: 1.5rem 5%; flex-direction: column; gap: 1.2rem; z-index: 99;
+    }
+    .mobile-nav.open { display: flex; }
+    .mobile-nav a {
+      font-size: 0.85rem; letter-spacing: 0.08em;
+      color: var(--muted); text-transform: uppercase;
+    }
+    .mobile-nav .btn-nav {
+      background: var(--accent); color: #000;
+      padding: 10px 18px; font-weight: 700; font-size: 0.78rem; text-align: center;
+    }
+
+    /* PAGE */
+    .page-wrap { padding-top: 64px; min-height: 100vh; display: flex; flex-direction: column; }
+
+    .page-header {
+      padding: 3.5rem 5% 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+    }
+    .back-link {
+      font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); display: inline-flex; align-items: center; gap: 6px;
+      transition: color 0.2s; margin-bottom: 1.5rem;
+    }
+    .back-link:hover { color: var(--accent); }
+    .page-tag {
+      font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.8rem;
+    }
+    .page-tag::before { content: '// '; opacity: 0.5; }
+    .page-header h1 {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 800; letter-spacing: -0.02em;
+    }
+    .page-header p {
+      color: var(--muted); font-size: 0.95rem; margin-top: 0.7rem; max-width: 540px;
+    }
+
+    /* BANNERS */
+    .success-banner {
+      display: none; background: rgba(0,232,122,0.1);
+      border: 1px solid rgba(0,232,122,0.4);
+      padding: 1rem 1.5rem; margin-bottom: 2rem;
+      font-size: 0.85rem; color: var(--accent);
+      align-items: flex-start; gap: 10px;
+    }
+    .success-banner.show { display: flex; }
+
+    .upload-progress {
+      display: none;
+      background: rgba(0,232,122,0.06);
+      border: 1px solid var(--border);
+      padding: 1rem 1.5rem; margin-bottom: 1.5rem;
+      font-size: 0.82rem; color: var(--muted);
+    }
+    .upload-progress.show { display: block; }
+
+    /* FORM AREA */
+    .form-area { padding: 3rem 5%; flex: 1; }
+
+    .form-grid { max-width: 760px; margin: 0 auto; }
+
+    /* section headers */
+    .form-section-title {
+      font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent); padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem; margin-top: 2.5rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .form-section-title:first-of-type { margin-top: 0; }
+
+    /* fields */
+    .field-group { margin-bottom: 1.4rem; }
+
+    label {
+      display: block; font-size: 0.72rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 0.5rem;
+    }
+    label .req { color: var(--accent); margin-left: 2px; }
+
+    input, select, textarea {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text); padding: 13px 16px;
+      font-size: 0.9rem; font-family: inherit; outline: none;
+      transition: border-color 0.2s; appearance: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    input::placeholder { color: var(--muted); }
+    textarea { resize: vertical; min-height: 80px; }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 40px; cursor: pointer;
+    }
+    select option { background: var(--bg3); }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+    /* file upload */
+    .file-upload-wrapper { position: relative; }
+
+    .file-upload-box {
+      border: 1px dashed var(--border);
+      background: var(--card);
+      padding: 1.2rem 1.5rem;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .file-upload-box:hover {
+      border-color: rgba(0,232,122,0.4); background: var(--bg3);
+    }
+    .file-upload-box.has-file { border-color: rgba(0,232,122,0.5); }
+
+    .file-upload-box input[type="file"] {
+      position: absolute; inset: 0; opacity: 0;
+      width: 100%; height: 100%; cursor: pointer;
+      background: transparent; border: none; padding: 0;
+    }
+
+    .file-icon { font-size: 1.4rem; flex-shrink: 0; }
+
+    .file-text { flex: 1; }
+    .file-text .file-title {
+      font-size: 0.82rem; font-weight: 600; margin-bottom: 2px;
+    }
+    .file-text .file-hint {
+      font-size: 0.72rem; color: var(--muted);
+    }
+    .file-text .file-name {
+      font-size: 0.75rem; color: var(--accent); margin-top: 3px;
+    }
+
+    .file-status { font-size: 1rem; }
+
+    /* agreement */
+    .agreement-box {
+      background: var(--card); border: 1px solid var(--border);
+      padding: 1.5rem 1.8rem; margin: 1.5rem 0 2rem;
+    }
+    .checkbox-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      margin-bottom: 0.8rem;
+    }
+    .checkbox-row:last-child { margin-bottom: 0; }
+    .checkbox-row input[type="checkbox"] {
+      width: 18px; height: 18px; min-width: 18px;
+      margin-top: 3px; cursor: pointer;
+      accent-color: var(--accent);
+      border: 1px solid var(--border); background: var(--bg3);
+      padding: 0;
+    }
+    .checkbox-row label {
+      font-size: 0.82rem; letter-spacing: 0; text-transform: none;
+      color: var(--text); cursor: pointer; line-height: 1.6;
+    }
+    .checkbox-row label a { color: var(--accent); }
+
+    /* verified panel */
+    .verified-panel {
+      background: var(--bg3); border: 1px solid var(--border);
+      padding: 1.5rem 2rem; margin: 2rem 0;
+    }
+    .verified-panel .vp-title {
+      font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 1.2rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .verified-panel .vp-title::before {
+      content: '✓'; font-size: 0.8rem;
+    }
+    .verified-drivers {
+      display: flex; gap: 0.8rem; flex-wrap: wrap;
+    }
+    .verified-driver {
+      background: var(--card); border: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .vd-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent-dim); border: 1px solid rgba(0,232,122,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; color: var(--accent); font-weight: 700;
+    }
+    .vd-info .vd-name { font-size: 0.82rem; font-weight: 600; }
+    .vd-info .vd-type { font-size: 0.68rem; color: var(--muted); }
+
+    /* submit */
+    .submit-btn {
+      width: 100%;
+      background: var(--accent); color: #000;
+      border: none; padding: 17px;
+      font-size: 0.82rem; font-weight: 800;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .submit-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .submit-btn:disabled {
+      opacity: 0.5; cursor: not-allowed; transform: none;
+    }
+
+    .form-note {
+      font-size: 0.72rem; color: var(--muted); text-align: center;
+      margin-top: 1rem; line-height: 1.6;
+    }
+
+    /* FOOTER */
+    footer {
+      background: var(--bg); border-top: 1px solid var(--border);
+      padding: 1.5rem 5%;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 1rem;
+    }
+    footer .copy {
+      font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted);
+    }
+    footer .footer-links { display: flex; gap: 1.5rem; }
+    footer .footer-links a {
+      font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted); transition: color 0.2s;
+    }
+    footer .footer-links a:hover { color: var(--text); }
+
+    @media (max-width: 640px) {
+      nav { padding: 0 4%; }
+      .nav-links { display: none; }
+      .hamburger { display: flex; }
+      .form-area { padding: 2rem 4%; }
+      .page-header { padding: 2.5rem 4% 1.5rem; }
+      .two-col, .three-col { grid-template-columns: 1fr; }
+      footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">
+    <span>TL</span> TRANSPORT-LINK
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html#how-it-works">How It Works</a></li>
+    <li><a href="index.html#features">Features</a></li>
+    <li><a href="index.html#transport">Services</a></li>
+    <li><a href="verify.html">Drivers</a></li>
+    <li><a href="booking.html" class="btn-nav">Book Now</a></li>
+  </ul>
+  <div class="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<div class="mobile-nav" id="mobileNav">
+  <a href="index.html#how-it-works" onclick="toggleMenu()">How It Works</a>
+  <a href="index.html#features" onclick="toggleMenu()">Features</a>
+  <a href="index.html#transport" onclick="toggleMenu()">Services</a>
+  <a href="verify.html">Drivers</a>
+  <a href="booking.html" class="btn-nav">Book Transport</a>
+</div>
+
+<div class="page-wrap">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <a href="index.html" class="back-link">← BACK TO HOME</a>
+    <div class="page-tag">Driver Registration & Verification</div>
+    <h1>Become a Verified Driver</h1>
+    <p>Only verified drivers can accept jobs on Transport-Link. Complete this form to join our trusted network.</p>
+  </div>
+
+  <!-- FORM -->
+  <div class="form-area">
+    <div class="form-grid">
+
+      <div class="success-banner" id="successBanner">
+        <span>✓</span>
+        <div>
+          <strong>Application submitted!</strong><br>
+          Your documents have been sent to our team via WhatsApp. We will review your application within 24–48 hours.
+        </div>
+      </div>
+
+      <div class="upload-progress" id="uploadProgress">
+        ⏳ Uploading documents… please wait and do not close this page.
+      </div>
+
+      <!-- PERSONAL INFO -->
+      <div class="form-section-title">Personal Information</div>
+
+      <div class="two-col">
+        <div class="field-group">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" id="driverName" placeholder="As on your ID document" required />
+        </div>
+        <div class="field-group">
+          <label>ID Number <span class="req">*</span></label>
+          <input type="text" id="driverID" placeholder="13-digit SA ID number" maxlength="13" required />
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field-group">
+          <label>Phone Number <span class="req">*</span></label>
+          <input type="tel" id="driverPhone" placeholder="e.g. 083 123 4567" required />
+        </div>
+        <div class="field-group">
+          <label>Email Address <span class="req">*</span></label>
+          <input type="email" id="driverEmail" placeholder="email@example.com" required />
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Physical Address <span class="req">*</span></label>
+        <input type="text" id="driverAddress" placeholder="Street, suburb, city" required />
+      </div>
+
+      <!-- LICENSE -->
+      <div class="form-section-title">Driver's License & Professional Documents</div>
+
+      <div class="three-col">
+        <div class="field-group">
+          <label>License Type <span class="req">*</span></label>
+          <select id="licenseType" required>
+            <option value="">Select license type</option>
+            <option value="Code 8 (Light vehicle)">Code 8 — Light vehicle</option>
+            <option value="Code 10 (Medium vehicle)">Code 10 — Medium vehicle</option>
+            <option value="Code 14 (Heavy vehicle)">Code 14 — Heavy vehicle</option>
+            <option value="EC (Articulated vehicle)">EC — Articulated vehicle</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>License Number <span class="req">*</span></label>
+          <input type="text" id="licenseNum" placeholder="License number" required />
+        </div>
+        <div class="field-group">
+          <label>License Expiry Date <span class="req">*</span></label>
+          <input type="date" id="licenseExpiry" required />
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field-group">
+          <label>Years of Experience <span class="req">*</span></label>
+          <select id="yearsExp" required>
+            <option value="">Select</option>
+            <option value="Less than 1 year">Less than 1 year</option>
+            <option value="1–3 years">1–3 years</option>
+            <option value="3–5 years">3–5 years</option>
+            <option value="5–10 years">5–10 years</option>
+            <option value="10+ years">10+ years</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Professional Driving Permit (PDP) <span class="req">*</span></label>
+          <select id="pdpStatus" required>
+            <option value="">Select PDP status</option>
+            <option value="Valid — Current PDP held">Valid — I have a current PDP</option>
+            <option value="Applied — Waiting for PDP">Applied — Waiting for PDP</option>
+            <option value="None — Need to apply">None — Need to apply</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- VEHICLE -->
+      <div class="form-section-title">Vehicle Information</div>
+
+      <div class="two-col">
+        <div class="field-group">
+          <label>Vehicle Type <span class="req">*</span></label>
+          <select id="vehicleType" required>
+            <option value="">Select vehicle type</option>
+            <option value="Bakkie / Pickup (up to 1 ton)">Bakkie / Pickup (up to 1 ton)</option>
+            <option value="Medium Truck (3–8 tons)">Medium Truck (3–8 tons)</option>
+            <option value="Heavy Truck (8–20 tons)">Heavy Truck (8–20 tons)</option>
+            <option value="Extra Heavy (20+ tons)">Extra Heavy (20+ tons)</option>
+            <option value="Refrigerated Truck">Refrigerated Truck</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Vehicle Registration <span class="req">*</span></label>
+          <input type="text" id="vehicleReg" placeholder="e.g. CA 123-456" required />
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field-group">
+          <label>Make & Model <span class="req">*</span></label>
+          <input type="text" id="vehicleMake" placeholder="e.g. Toyota Hilux 2020" required />
+        </div>
+        <div class="field-group">
+          <label>Load Capacity (kg) <span class="req">*</span></label>
+          <input type="number" id="loadCapacity" placeholder="e.g. 1000" min="100" required />
+        </div>
+      </div>
+
+      <!-- DOCUMENTS -->
+      <div class="form-section-title">Document Uploads</div>
+
+      <div class="field-group">
+        <div class="file-upload-box" id="box-idDoc">
+          <div class="file-icon">📄</div>
+          <div class="file-text">
+            <div class="file-title">ID Document (copy)</div>
+            <div class="file-hint">PDF, JPG or PNG · Max 10MB</div>
+            <div class="file-name" id="name-idDoc">No file selected</div>
+          </div>
+          <div class="file-status" id="status-idDoc">📎</div>
+          <input type="file" id="file-idDoc" accept=".pdf,.jpg,.jpeg,.png"
+            onchange="fileSelected('idDoc')" />
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="file-upload-box" id="box-license">
+          <div class="file-icon">🚗</div>
+          <div class="file-text">
+            <div class="file-title">Driver's License</div>
+            <div class="file-hint">PDF, JPG or PNG · Max 10MB</div>
+            <div class="file-name" id="name-license">No file selected</div>
+          </div>
+          <div class="file-status" id="status-license">📎</div>
+          <input type="file" id="file-license" accept=".pdf,.jpg,.jpeg,.png"
+            onchange="fileSelected('license')" />
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="file-upload-box" id="box-vehicleReg">
+          <div class="file-icon">🚛</div>
+          <div class="file-text">
+            <div class="file-title">Vehicle Registration / Permit</div>
+            <div class="file-hint">PDF, JPG or PNG · Max 10MB</div>
+            <div class="file-name" id="name-vehicleReg">No file selected</div>
+          </div>
+          <div class="file-status" id="status-vehicleReg">📎</div>
+          <input type="file" id="file-vehicleReg" accept=".pdf,.jpg,.jpeg,.png"
+            onchange="fileSelected('vehicleReg')" />
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="file-upload-box" id="box-photo">
+          <div class="file-icon">📸</div>
+          <div class="file-text">
+            <div class="file-title">Driver Profile Photo</div>
+            <div class="file-hint">JPG or PNG · Max 10MB</div>
+            <div class="file-name" id="name-photo">No file selected</div>
+          </div>
+          <div class="file-status" id="status-photo">📎</div>
+          <input type="file" id="file-photo" accept=".jpg,.jpeg,.png"
+            onchange="fileSelected('photo')" />
+        </div>
+      </div>
+
+      <!-- AGREEMENT -->
+      <div class="form-section-title">Agreement</div>
+
+      <div class="agreement-box">
+        <div class="checkbox-row">
+          <input type="checkbox" id="agreeTerms" />
+          <label for="agreeTerms">
+            I confirm that all information provided is true and correct. I understand that Transport-Link will verify my documents and conduct a background check. I agree to the <a href="#">Terms of Service</a> and <a href="#">Driver Code of Conduct</a>.
+          </label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="agreeBackground" />
+          <label for="agreeBackground">
+            I consent to a background check and driver record verification as part of the application process.
+          </label>
+        </div>
+      </div>
+
+      <button class="submit-btn" id="submitBtn" onclick="submitApplication()">
+        SUBMIT VERIFICATION →
+      </button>
+
+      <p class="form-note">
+        Your application and documents will be sent to our team via WhatsApp.<br>
+        Review takes 24–48 hours. You will be contacted on the number provided.
+      </p>
+
+      <!-- VERIFIED PANEL -->
+      <div class="verified-panel">
+        <div class="vp-title">Recently Verified Drivers</div>
+        <div class="verified-drivers">
+          <div class="verified-driver">
+            <div class="vd-avatar">KD</div>
+            <div class="vd-info">
+              <div class="vd-name">K. Dlamini</div>
+              <div class="vd-type">Heavy Truck · Code 14</div>
+            </div>
+          </div>
+          <div class="verified-driver">
+            <div class="vd-avatar">TM</div>
+            <div class="vd-info">
+              <div class="vd-name">T. Mokoena</div>
+              <div class="vd-type">Medium Truck · Code 10</div>
+            </div>
+          </div>
+          <div class="verified-driver">
+            <div class="vd-avatar">SN</div>
+            <div class="vd-info">
+              <div class="vd-name">S. Nkosi</div>
+              <div class="vd-type">Bakkie · Code 8</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="copy">© 2025 TRANSPORT-LINK. SECURE LOGISTICS.</div>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="booking.html">Book Transport</a>
+      <a href="https://wa.me/27604440705" target="_blank">Contact</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  const WA_NUMBER = '27604440705';
+  const fileData = {}; // stores { key: { name, file } }
+
+  function toggleMenu() {
+    document.getElementById('mobileNav').classList.toggle('open');
+  }
+
+  function fileSelected(key) {
+    const input = document.getElementById('file-' + key);
+    const file = input.files[0];
+    if (!file) return;
+    fileData[key] = { name: file.name, file };
+    document.getElementById('name-' + key).textContent = file.name;
+    document.getElementById('status-' + key).textContent = '✅';
+    document.getElementById('box-' + key).classList.add('has-file');
+  }
+
+  // Upload a single file to file.io and return the public link
+  async function uploadFile(key) {
+    if (!fileData[key]) return null;
+    const fd = new FormData();
+    fd.append('file', fileData[key].file);
+    fd.append('expires', '7d');   // link valid 7 days
+    fd.append('maxDownloads', '5');
+    try {
+      const res = await fetch('https://file.io', { method: 'POST', body: fd });
+      const json = await res.json();
+      if (json.success && json.link) return json.link;
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function validateForm() {
+    const required = [
+      { id: 'driverName',    label: 'Full Name' },
+      { id: 'driverID',      label: 'ID Number' },
+      { id: 'driverPhone',   label: 'Phone Number' },
+      { id: 'driverEmail',   label: 'Email Address' },
+      { id: 'driverAddress', label: 'Physical Address' },
+      { id: 'licenseType',   label: 'License Type' },
+      { id: 'licenseNum',    label: 'License Number' },
+      { id: 'licenseExpiry', label: 'License Expiry Date' },
+      { id: 'yearsExp',      label: 'Years of Experience' },
+      { id: 'pdpStatus',     label: 'PDP Status' },
+      { id: 'vehicleType',   label: 'Vehicle Type' },
+      { id: 'vehicleReg',    label: 'Vehicle Registration' },
+      { id: 'vehicleMake',   label: 'Make & Model' },
+      { id: 'loadCapacity',  label: 'Load Capacity' },
+    ];
+
+    for (const f of required) {
+      const el = document.getElementById(f.id);
+      if (!el.value.trim()) {
+        el.focus();
+        el.style.borderColor = '#ff4444';
+        setTimeout(() => el.style.borderColor = '', 2500);
+        alert('Please fill in: ' + f.label);
+        return false;
+      }
+    }
+
+    if (!document.getElementById('agreeTerms').checked) {
+      alert('Please agree to the Terms of Service to continue.');
+      return false;
+    }
+    if (!document.getElementById('agreeBackground').checked) {
+      alert('Please consent to the background check to continue.');
+      return false;
+    }
+
+    return true;
+  }
+
+  async function submitApplication() {
+    if (!validateForm()) return;
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'UPLOADING DOCUMENTS…';
+
+    document.getElementById('uploadProgress').classList.add('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Upload all docs in parallel
+    const [idUrl, licUrl, regUrl, photoUrl] = await Promise.all([
+      uploadFile('idDoc'),
+      uploadFile('license'),
+      uploadFile('vehicleReg'),
+      uploadFile('photo'),
+    ]);
+
+    document.getElementById('uploadProgress').classList.remove('show');
+
+    // Gather text fields
+    const name     = document.getElementById('driverName').value.trim();
+    const idNum    = document.getElementById('driverID').value.trim();
+    const phone    = document.getElementById('driverPhone').value.trim();
+    const email    = document.getElementById('driverEmail').value.trim();
+    const address  = document.getElementById('driverAddress').value.trim();
+    const licType  = document.getElementById('licenseType').value;
+    const licNum   = document.getElementById('licenseNum').value.trim();
+    const licExp   = document.getElementById('licenseExpiry').value;
+    const exp      = document.getElementById('yearsExp').value;
+    const pdp      = document.getElementById('pdpStatus').value;
+    const vType    = document.getElementById('vehicleType').value;
+    const vReg     = document.getElementById('vehicleReg').value.trim();
+    const vMake    = document.getElementById('vehicleMake').value.trim();
+    const vLoad    = document.getElementById('loadCapacity').value.trim();
+
+    const docLine = (label, url, fileName) =>
+      url ? `${label}: ${url}` : (fileName ? `${label}: [upload failed — ${fileName}]` : `${label}: Not uploaded`);
+
+    const msg =
+`🪪 *TRANSPORT-LINK — DRIVER APPLICATION*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 *PERSONAL DETAILS*
+Name: ${name}
+ID Number: ${idNum}
+Phone: ${phone}
+Email: ${email}
+Address: ${address}
+
+🚗 *LICENSE & EXPERIENCE*
+License Type: ${licType}
+License Number: ${licNum}
+License Expiry: ${licExp}
+Experience: ${exp}
+PDP Status: ${pdp}
+
+🚛 *VEHICLE DETAILS*
+Vehicle Type: ${vType}
+Registration: ${vReg}
+Make & Model: ${vMake}
+Load Capacity: ${vLoad} kg
+
+📁 *UPLOADED DOCUMENTS*
+${docLine('📄 ID Document', idUrl, fileData.idDoc?.name)}
+${docLine('🚗 Driver\'s License', licUrl, fileData.license?.name)}
+${docLine('🚛 Vehicle Registration', regUrl, fileData.vehicleReg?.name)}
+${docLine('📸 Profile Photo', photoUrl, fileData.photo?.name)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Please review and verify this driver application.
+Links expire in 7 days.`;
+
+    const url = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(msg);
+    window.open(url, '_blank');
+
+    btn.disabled = false;
+    btn.textContent = 'SUBMIT VERIFICATION →';
+    document.getElementById('successBanner').classList.add('show');
+  }
+</script>
+</body>
+</html>
